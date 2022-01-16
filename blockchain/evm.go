@@ -69,10 +69,37 @@ type filterQuery struct {
 	Topics [][]common.Hash
 }
 
+// Checks to see if the hash is all zero's
+func checkNullHash(h common.Hash) bool {
+	for _, v := range h {
+		if v != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func (q filterQuery) toMapInterface() (interface{}, error) {
 	arg := map[string]interface{}{
 		"address": q.Addresses,
-		"topics":  q.Topics,
+	}
+	// Check if len q.Topics is equal to 1
+	// If we don't separate out the single topics slice, then a job will trigger on every contract interaction,
+	// since the topics would be [* or [TOPICS]]
+	if len(q.Topics) == 1 {
+		topics := make([]*string, 0)
+		for _, t := range q.Topics[0] {
+			if checkNullHash(t) {
+				topics = append(topics, nil)
+			} else {
+				hexVal := t.Hex()
+				var pointer *string = &hexVal
+				topics = append(topics, pointer)
+			}
+		}
+		arg["topics"] = topics
+	} else {
+		arg["topics"] = q.Topics
 	}
 	if q.BlockHash != nil {
 		arg["blockHash"] = *q.BlockHash

@@ -35,6 +35,8 @@ func createEthManager(p subscriber.Type, config store.Subscription) ethManager {
 	var t []common.Hash
 	for _, value := range config.Ethereum.Topics {
 		if len(value) < 1 {
+			// Must add null values for wildcards
+			t = append(t, common.Hash{})
 			continue
 		}
 		t = append(t, common.HexToHash(value))
